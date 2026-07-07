@@ -11,45 +11,66 @@ class Value:
         return type(self)(data, _children, _op)
     
     def __repr__(self):
-        return f"Value(data={self.data}, op='{self._op}')"
+        return f"Value(data={self.data}, op='{self._op}', grad={self.grad})"
     
-    def __add__(self , other):
+    def __add__(self, other):
         if isinstance(other, Value):
             new_data = self.data + other.data
         else: 
             new_data = self.data + other
             other = Value(other)
-        return self._make(data=new_data, _children=(self, other), _op='+')
+        out = self._make(data=new_data, _children=(self, other), _op='+')
+
+        def _backward():
+            self.grad += out.grad
+            other.grad += out.grad
+        out._backward = _backward
+        
+        return out
     
-    def __sub__(self , other):
+    def __sub__(self, other):
         if isinstance(other, Value):
-            new_data = self.data + (-other.data)
-        else: 
-            new_data = self.data + -(other)
-            other = Value(other)
-        return self._make(data=new_data, _children=(self, other), _op='-')
-    
-    def __mul__(self , other):
+            other.data = -other.data
+        else: other = -other
+
+        return self.__add__(other)
+        
+    def __mul__(self, other):
         if isinstance(other, Value):
             new_data = self.data * other.data
         else: 
             new_data = self.data * other
             other = Value(other)
-        return self._make(data=new_data, _children=(self, other), _op='*')
+        out = self._make(data=new_data, _children=(self, other), _op='*')
+
+        def _backward():
+            self.grad += other.data * out.grad
+            other.grad += self.data * out.grad
+        out._backward = _backward
+        
+        return out
     
-    def __pow__(self, exponent: int | float):
-        return self._make(data=self.data ** exponent, _children=(self,), _op=f'**{exponent}')
+    def __pow__(self, exponent):
+        if not isinstance(exponent, int | float):
+            exponent = float(exponent)
+        out = self._make(data=self.data ** exponent, _children=(self,), _op=f'**{exponent}')
+
+        def _backwards():
+            self.grad += (exponent * self.data ** (exponent - 1)) * out.grad
+        out._backward = _backwards
+
+        return out
+
     
     def __neg__(self):
-        return self._make(data=self.data * -1, _children=(self,), _op='*-1')
+        return self.__mul__(-1)
     
     def __truediv__(self, other):
         if isinstance(other, Value):
-            new_data = self.data * other.data ** -1
+            other.data = other.data ** -1
         else: 
-            new_data = self.data * other ** -1
-            other = Value(other)
-        return self._make(data=new_data, _children=(self, other), _op='/')
+            other = other ** -1
+        return self.__mul__(other)
     
     def __radd__(self, other):
         return self.__add__(other)
@@ -65,8 +86,7 @@ class Value:
     def __rtruediv__(self, other):
         if not isinstance(other, Value):
             other = Value(other)
-        return other.__truediv__(self)
-    
+        return other.__truediv__(self)    
 
 def trace(root: Value):
     nodes = list(root._prev)
@@ -83,7 +103,3 @@ def trace(root: Value):
                 seen.add(prev_node)
 
     return (set(nodes), edges)
-    
-
-
-
