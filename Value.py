@@ -14,12 +14,9 @@ class Value:
         return f"Value(data={self.data}, op='{self._op}', grad={self.grad})"
     
     def __add__(self, other):
-        if isinstance(other, Value):
-            new_data = self.data + other.data
-        else: 
-            new_data = self.data + other
-            other = Value(other)
-        out = self._make(data=new_data, _children=(self, other), _op='+')
+        if not isinstance(other, Value): other = Value(other)
+
+        out = self._make(data=self.data + other.data, _children=(self, other), _op='+')
 
         def _backward():
             self.grad += out.grad
@@ -27,21 +24,11 @@ class Value:
         out._backward = _backward
         
         return out
-    
-    def __sub__(self, other):
-        if isinstance(other, Value):
-            other.data = -other.data
-        else: other = -other
-
-        return self.__add__(other)
         
     def __mul__(self, other):
-        if isinstance(other, Value):
-            new_data = self.data * other.data
-        else: 
-            new_data = self.data * other
-            other = Value(other)
-        out = self._make(data=new_data, _children=(self, other), _op='*')
+        if not isinstance(other, Value): other = Value(other)
+
+        out = self._make(data=self.data * other.data, _children=(self, other), _op='*')
 
         def _backward():
             self.grad += other.data * out.grad
@@ -60,33 +47,65 @@ class Value:
         out._backward = _backwards
 
         return out
-
     
+    def __sub__(self, other):
+        return self + (-other)
+
     def __neg__(self):
-        return self.__mul__(-1)
+        return self * -1
     
     def __truediv__(self, other):
-        if isinstance(other, Value):
-            other.data = other.data ** -1
-        else: 
-            other = other ** -1
-        return self.__mul__(other)
+        return self * (other ** -1)
     
     def __radd__(self, other):
-        return self.__add__(other)
+        return self + other
     
     def __rsub__(self, other):
         if not isinstance(other, Value):
             other = Value(other)
-        return other.__sub__(self)
+        return other - self
     
     def __rmul__(self, other):
-        return self.__mul__(other)
+        return self * other
 
     def __rtruediv__(self, other):
         if not isinstance(other, Value):
             other = Value(other)
-        return other.__truediv__(self)    
+        return other / self
+    
+    def backward(self):
+        visited = set()
+        topo = []
+        def topo_sort(root):
+            if root not in visited:
+                visited.add(root)
+
+                for child in root._prev:
+                    topo_sort(child)
+
+                topo.append(root)
+
+        topo_sort(self)
+
+        self.grad = 1.0
+
+        for v in reversed(topo): v._backward()
+
+def topo_sort(root):
+    visited = set()
+    order = []
+
+    def build(node):
+        if node not in visited:
+            visited.add(node)
+
+            for child in node._prev:
+                build(child)
+
+            order.append(node)
+
+    build(root)
+    return order
 
 def trace(root: Value):
     nodes = list(root._prev)
@@ -103,3 +122,5 @@ def trace(root: Value):
                 seen.add(prev_node)
 
     return (set(nodes), edges)
+
+
