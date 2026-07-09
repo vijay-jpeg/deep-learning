@@ -1,3 +1,4 @@
+from math import tanh, exp
 
 class Value:
     def __init__(self, data, _children=(), _op=''):
@@ -15,7 +16,6 @@ class Value:
     
     def __add__(self, other):
         if not isinstance(other, Value): other = Value(other)
-
         out = self._make(data=self.data + other.data, _children=(self, other), _op='+')
 
         def _backward():
@@ -27,7 +27,6 @@ class Value:
         
     def __mul__(self, other):
         if not isinstance(other, Value): other = Value(other)
-
         out = self._make(data=self.data * other.data, _children=(self, other), _op='*')
 
         def _backward():
@@ -72,6 +71,33 @@ class Value:
         if not isinstance(other, Value):
             other = Value(other)
         return other / self
+    
+    def tanh(self):
+        out = self._make(data=tanh(self.data), _children=(self,), _op='tanh')
+
+        def _backwards():
+            self.grad += (1 - out.data ** 2) * out.grad
+        out._backward = _backwards
+
+        return out
+    
+    def exp(self):
+        out = self._make(data=exp(self.data), _children=(self,), _op='exp')
+
+        def _backwards():
+            self.grad += out.data * out.grad
+        out._backward = _backwards
+
+        return out
+    
+    def relu(self):
+        out = self._make(data=0 if self.data < 0 else self.data, _children=(self,), _op='relu')
+
+        def _backwards():
+            if out.data > 0: self.grad += out.grad 
+        out._backward = _backwards
+
+        return out
     
     def backward(self):
         visited = set()
