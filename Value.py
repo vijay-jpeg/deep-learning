@@ -148,5 +148,3 @@ def trace(root: Value):
                 seen.add(prev_node)
 
     return (set(nodes), edges)
-
-
