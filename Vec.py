@@ -73,7 +73,7 @@ class Vec:
                 out += self[i] * other[i]
         else:
             for i in range (len(self)):
-                out += self[i] * other
+                out += self[i] * other[i]
 
         return out
 
