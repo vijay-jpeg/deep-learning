@@ -1,5 +1,5 @@
-from Value import Value
-from Vec import Vec
+from micrograd.value import Value
+from micrograd.vec import Vec
 
 class Mat:
     """A 2-D matrix of `Value` scalars (row-major `List[List[Value]]`). Ops compose

@@ -1,4 +1,4 @@
-from Value import Value
+from micrograd.value import Value
 
 class Vec:
     def __init__(self, data) -> None:
