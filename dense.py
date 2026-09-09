@@ -26,18 +26,18 @@ class Dense:
         if is_1d:
             x = x.reshape(1, x.shape[0])
 
-        out = x @ self.W
+        z = x @ self.W
 
         if self.bias:
-            ones = Tensor(np.ones((out.shape[0], 1)))
+            ones = Tensor(np.ones((z.shape[0], 1)))
             b = self.b.reshape(1, self.b.shape[0])
             bias_matrix = ones @ b
-            out = out + bias_matrix
+            z = z + bias_matrix
 
         if is_1d == 1:
-            return out.reshape(out.shape[1])
+            return z.reshape(z.shape[1])
 
-        return out
+        return z
 
     def parameters(self) -> List["Tensor"]:
         return [self.W, self.b] if self.bias else [self.W]
