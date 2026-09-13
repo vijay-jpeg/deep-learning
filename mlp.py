@@ -42,6 +42,51 @@ class Tensor(Stage8_Tensor):
         out._backward = _backward
 
         return out
+    
+def sum(self, axis=None, keepdims=False) -> "Tensor":
+    out = self._make_tensor(np.sum(self.data, axis=axis, keepdims=keepdims), _prev=(self,), _op="sum")
+
+    def _backward():
+        grad = out.grad
+
+        if not keepdims and axis is not None:
+            axes = (axis,) if isinstance(axis, int) else axis
+            axes = tuple(a if a >= 0 else a + self.data.ndim for a in axes)
+            for a in sorted(axes):
+                grad = np.expand_dims(grad, axis=a)
+
+        grad = np.broadcast_to(grad, self.shape)
+        Tensor._accumulate(self, grad)
+
+    out._backward = _backward
+    return out
+
+def mean(self, axis=None, keepdims=False) -> "Tensor":
+    out = self._make_tensor(np.mean(self.data, axis=axis, keepdims=keepdims), _prev=(self,), _op="mean")
+
+    def _backward():
+        grad = out.grad
+
+        if not keepdims and axis is not None:
+            axes = (axis,) if isinstance(axis, int) else axis
+            axes = tuple(a if a >= 0 else a + self.data.ndim for a in axes)
+            for a in sorted(axes):
+                grad = np.expand_dims(grad, axis=a)
+
+        grad = np.broadcast_to(grad, self.shape)
+
+        if axis is None:
+            n = self.data.size
+        else:
+            axes = (axis,) if isinstance(axis, int) else axis
+            n = np.prod([self.data.shape[a] for a in axes])
+
+        Tensor._accumulate(self, grad / n)
+
+    out._backward = _backward
+    return out
+
+
 
 class Dense(Stage10_Dense):
     def __init__(
