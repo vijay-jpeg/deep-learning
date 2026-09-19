@@ -31,6 +31,10 @@ class Tensor:
     @property
     def shape(self) -> Tuple[int, ...]:
         return self.data.shape
+    
+    @property
+    def size(self) -> int:
+        return self.data.size
 
     def reshape(self, *shape: int) -> "Tensor":
         if (len(shape) == 1) and (isinstance(shape[0], Sequence)):
