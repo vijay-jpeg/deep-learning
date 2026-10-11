@@ -16,19 +16,25 @@ def iterate_minibatches(
     drop_last: bool = False,
 ) -> Iterator[Tuple[np.ndarray, np.ndarray]]:
     
-    assert X.shape[0] == y.size
+    assert X.shape[0] == y.shape[0]
     assert 0 < batch_size <= y.size
 
+    N = X.shape[0]
+
     if shuffle:
-        X = np.random.default_rng(seed).permutation(X)
-        y = np.random.default_rng(seed).permutation(y)
+        indices = np.random.default_rng(seed).permutation(N)
+    else:
+        indices = np.arange(N)
 
-    if drop_last and y.size < batch_size: return
+    for start in range(0, N, batch_size):
+        end = min(start + batch_size, N)
 
-    end = y.size if not drop_last else y.size - (y.size % batch_size)
+        if end - start < batch_size and drop_last:
+            break
 
-    for start in range(0, end, batch_size):
-        yield X[start : start + batch_size], y[start : start + batch_size]
+        batch_indices = indices[start:end]
+
+        yield X[batch_indices], y[batch_indices]
 
 
 def train_minibatch(
