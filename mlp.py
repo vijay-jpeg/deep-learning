@@ -85,6 +85,9 @@ class Tensor(Stage8_Tensor):
 
         out._backward = _backward
         return out
+    
+    def _abs(t: "Tensor") -> "Tensor":
+        return t.relu() + (-t).relu()
 
 
 
