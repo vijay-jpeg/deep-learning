@@ -1,7 +1,7 @@
 from typing import List, Optional, Sequence
 import numpy as np
 
-from mlp import Tensor, MLP
+from .mlp import Tensor, MLP
 
 
 class Dropout:
@@ -9,48 +9,55 @@ class Dropout:
     p_keep in (0, 1] (1.0 is identity); seed drives the private mask RNG."""
 
     def __init__(self, p_keep: float = 0.5, *, seed: Optional[int] = None) -> None:
-        # TODO: validate 0 < p_keep <= 1; store p_keep, _rng, training=True, mask=None.
-        raise NotImplementedError("Dropout.__init__")
+        assert 0 < p_keep <= 1
+
+        self.p_keep = p_keep
+        self._rng = np.random.default_rng(seed)
+        self.training = True
+        self.mask = None
 
     def __call__(self, x) -> "Tensor":
-        """Forward: train -> ``x * Tensor(m / p_keep)`` (store scale in self.mask);
+        """Forward: train -> ``x * Tensor(m / p_keep)``;
         eval -> identity."""
-        # TODO: implement the train/eval forward described above.
-        raise NotImplementedError("Dropout.__call__")
+        if not isinstance(x, Tensor):
+            x = Tensor(x)
+        
+        if self.training:
+            m = self._rng.binomial(1, self.p_keep, size=x.shape)
+            s = m / self.p_keep
+            self.mask = s
+            return x * Tensor(s)
+        
+        else:
+            self.mask = None
+            return x
+
 
     def forward(self, x) -> "Tensor":
-        """Alias for :meth:`__call__`."""
-        # TODO: delegate to __call__.
-        raise NotImplementedError("Dropout.forward")
+        return self(x)
 
     def train(self, mode: bool = True) -> "Dropout":
         """Set ``self.training = mode`` (True -> sample + scale, False -> eval).
         Returns ``self``."""
-        # TODO: set self.training = mode.
-        raise NotImplementedError("Dropout.train")
+        self.training = mode
+        return self
 
     def eval(self) -> "Dropout":
         """Switch to eval mode (identity). Returns ``self``."""
-        # TODO: set eval mode.
-        raise NotImplementedError("Dropout.eval")
+        return self.train(False)
 
     def parameters(self) -> List["Tensor"]:
-        """Dropout has no learnable parameters (returns [])."""
-        # TODO: implement
-        raise NotImplementedError("Dropout.parameters")
+        return []
 
     def zero_grad(self) -> None:
-        """No parameters -> nothing to clear."""
-        # TODO: implement
-        raise NotImplementedError("Dropout.zero_grad")
+        pass
 
     def __repr__(self) -> str:
-        # TODO: short repr with p_keep and training.
-        raise NotImplementedError("Dropout.__repr__")
+        return f"Dropout(p_keep={self.p_keep}, training={self.training}, mask={self.mask})"
 
 
 class MLPDropout(MLP):
-    """An ``MLP`` (stage_11) with a ``Dropout`` after each hidden activation (none
+    """An ``MLP`` with a ``Dropout`` after each hidden activation (none
     after output). Adds hidden dropouts + a training flag flipping all of them.
     activation/out_activation in ``{"tanh", "relu", "none"}``."""
 
@@ -63,37 +70,45 @@ class MLPDropout(MLP):
         out_activation: str = "none",
         seed: Optional[int] = None,
     ) -> None:
-        # Defer Dense-stack build + validation + size/activation storage to MLP ctor
-        # (positional: sizes, activation, out_activation, seed).
         super().__init__(sizes, activation, out_activation, seed)
-        # TODO: store p_keep/training; build self.dropouts, one per hidden layer
-        #   (distinct derived seed each).
-        raise NotImplementedError("MLPDropout.__init__")
+        self.dropouts = [None] * (len(sizes) - 2)
+        self.p_keep = p_keep
+        self.training = True
+        for i in range(len(sizes) - 2):
+            self.dropouts[i] = Dropout(p_keep, seed=seed)
+            if seed is not None: seed += 1
 
     def forward(self, x) -> "Tensor":
-        """Per hidden layer: dense -> activation -> dropout; output: dense ->
-        out_activation (no dropout)."""
-        # TODO: implement the layered forward described above (no gradients here).
-        raise NotImplementedError("MLPDropout.forward")
+        z = x
+
+        for layer, dropout in zip(
+            self.layers[:-1],
+            self.dropouts,
+        ):
+            z = layer(z)
+            z = self._apply_activation(z, self.activation)
+            z = dropout(z)
+
+        z = self.layers[-1](z)
+        z = self._apply_activation(z, self.out_activation)
+
+        return z
 
     def __call__(self, x) -> "Tensor":
-        """Alias for :meth:`forward`."""
-        # TODO: delegate to forward.
-        raise NotImplementedError("MLPDropout.__call__")
+        return self.forward(x)
 
     def train(self, mode: bool = True) -> "MLPDropout":
-        """Set ``self.training = mode`` on the model AND every owned Dropout.
-        Returns self."""
-        # TODO: set self.training = mode on self and all dropouts.
-        raise NotImplementedError("MLPDropout.train")
+        for dp in self.dropouts:
+            dp.training = mode
+        self.training = mode
+
+        return self
 
     def eval(self) -> "MLPDropout":
-        """Put the model AND every owned Dropout in eval mode. Returns self."""
-        # TODO: set eval mode on self and all dropouts.
-        raise NotImplementedError("MLPDropout.eval")
+        return self.train(False)
 
     # parameters() and zero_grad() are inherited from MLP
 
     def __repr__(self) -> str:
         # TODO: short repr with sizes, p_keep, activation, out_activation.
-        raise NotImplementedError("MLPDropout.__repr__")
+        return f"MLPDropout(sizes={self.sizes}, p_keep={self.p_keep}, activation{self.activation}, out_activation={self.out_activation})"
