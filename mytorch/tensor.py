@@ -1,4 +1,3 @@
-from micrograd.value import Value
 import numpy as np
 from typing import Tuple, Union, Sequence
 
@@ -23,10 +22,6 @@ class Tensor:
     def _coerce(self, other: Operand) -> "Tensor":
         if isinstance(other, Tensor): return other
         return self._make_tensor(data=other)
-
-    @classmethod
-    def from_value(cls, v: Value) -> "Tensor":
-        return cls(data=v.data)
 
     @property
     def shape(self) -> Tuple[int, ...]:

@@ -1,10 +1,10 @@
 from typing import Dict, Iterator, List, Mapping, Optional, Sequence, Tuple
 import numpy as np
 
-from mlp import Tensor, MLP
-from optimizer import Optimizer, SGD, Adam
-from train import accuracy, train
-from loss import mse_loss
+from .mlp import Tensor, MLP
+from .optimizer import Optimizer, SGD, Adam
+from .train import accuracy, train
+from .loss import mse_loss
 
 def iterate_minibatches(
     X: np.ndarray,

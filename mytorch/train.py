@@ -1,8 +1,8 @@
 from typing import Dict, List, Optional, Union
 import numpy as np
-from mlp import Tensor, MLP
-from loss import mse_loss
-from optimizer import SGD
+from .mlp import Tensor, MLP
+from .loss import mse_loss
+from .optimizer import SGD
 
 # --------------------------------------------------------------------------- #
 # accuracy metric (off-graph, read-only)

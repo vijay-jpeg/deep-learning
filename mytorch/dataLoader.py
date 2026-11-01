@@ -1,7 +1,7 @@
 from typing import Dict, Iterator, Optional, Tuple
 import numpy as np
 
-from batch import Tensor, MLP, mse_loss, SGD, train_minibatch
+from .batch import Tensor, MLP, mse_loss, SGD, train_minibatch
 
 
 

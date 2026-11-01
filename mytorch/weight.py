@@ -1,8 +1,8 @@
 from typing import Callable, Dict, List, Optional, Sequence
 import numpy as np
 
-from tensor import Tensor
-from dense import Dense
+from .tensor import Tensor
+from .dense import Dense
 
 def xavier_uniform(
     n_in: int, n_out: int, *, gain: float = 1.0, seed: Optional[int] = None
@@ -66,5 +66,3 @@ def forward_activation_stats(
     print(len(stats))
     
     return stats
-
-forward_activation_stats([32,32,32,32], he_normal, "tanh")

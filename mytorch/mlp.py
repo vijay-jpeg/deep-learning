@@ -1,7 +1,7 @@
 from typing import List, Optional, Sequence, Tuple, Union
 import numpy as np
-from tensor import Tensor as Stage8_Tensor
-from dense import Dense as Stage10_Dense
+from .tensor import Tensor as Stage8_Tensor
+from .dense import Dense as Stage10_Dense
 
 Operand = Union["Tensor", float, int, np.ndarray, list]
 
@@ -124,7 +124,6 @@ class Dense(Stage10_Dense):
 
 
 class MLP:
-
     def __init__(
         self,
         sizes: Sequence[int],
@@ -153,9 +152,12 @@ class MLP:
 
     def forward(self, x: "Stage8_Tensor") -> "Stage8_Tensor":
         z = x
-        for layer in self.layers:
+        for layer in self.layers[:-1]:
             z = layer(z)
             z = self._apply_activation(z, self.activation)
+
+        z = self.layers[-1](z)
+        z = self._apply_activation(z, self.out_activation)
 
         return z
 

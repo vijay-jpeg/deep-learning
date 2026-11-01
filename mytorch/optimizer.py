@@ -1,4 +1,4 @@
-from mlp import Tensor
+from .mlp import Tensor
 import numpy as np
 from typing import Iterable, Tuple
 

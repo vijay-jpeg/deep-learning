@@ -1,6 +1,6 @@
 from typing import List, Optional
 import numpy as np
-from tensor import Tensor
+from .tensor import Tensor
 
 class Dense:
     """Fully-connected (linear) layer ``Z = X @ W + b`` built on stage_08 Tensor."""
